@@ -1,29 +1,18 @@
-import React, { useLayoutEffect, useState, useCallback, useEffect } from 'react'
-import { View, Text } from 'react-native'
+import React, { useLayoutEffect, useState, useCallback, useEffect } from 'react';
+import { View, Text } from 'react-native';
 import { auth, db } from '../firebase';
 import { AntDesign } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Avatar } from 'react-native-elements';
 import { GiftedChat } from 'react-native-gifted-chat';
 
+// Async and NetInfo imports
+import AsyncStorage from '@react-native-community/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
 const ChatScreen = ({navigation}) => {
 
   const [messages, setMessages] = useState([]);
-
-  // useEffect(() => {
-  //   setMessages([
-  //     {
-  //       _id: 1,
-  //       text: 'Hello developer',
-  //       createdAt: new Date(),
-  //       user: {
-  //         _id: 2,
-  //         name: 'React Native',
-  //         avatar: 'https://placeimg.com/140/140/any',
-  //       },
-  //     },
-  //   ])
-  // }, [])
 
   useLayoutEffect(() => {
     const unsubscribe = db.collection('chats').orderBy('createdAt', 'desc').onSnapshot(snapshot => setMessages(
@@ -55,7 +44,6 @@ const ChatScreen = ({navigation}) => {
     })
   }, [])
 
-
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
@@ -82,6 +70,48 @@ const ChatScreen = ({navigation}) => {
       // An error happened.
     });
   }
+
+  componentDidMount = () => {
+    NetInfo.fetch().then(connection => {
+      if (connection.isConnected) {
+        console.log('online');
+      } else {
+        console.log('offline');
+      }
+    });
+  }
+
+  const getMessages = async() => {
+    let messages = '';
+    try {
+      messages = await AsyncStorage.getItem('messages') || [];
+      this.setState({
+        messages: JSON.parse(messages)
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  // const saveMessages = async() => {
+  //   try {
+  //     await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+  //   } catch (error) {
+  //     console.log(error.message);
+  //   }
+  // }
+
+  const deleteMessages = async() => {
+    try {
+      await AsyncStorage.removeItem('messages');
+      this.setState({
+        messages: [],
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
   return (
     <GiftedChat
     messages={messages}
